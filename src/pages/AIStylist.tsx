@@ -68,14 +68,12 @@ const AIStylistPage = () => {
 
       if (resp.status === 429) {
         toast.error("Too many requests — please wait a moment.");
-        setLoading(false);
-        setMessages((prev) => prev.slice(0, -1));
+        setMessages((prev) => prev.slice(0, -2));
         return;
       }
       if (resp.status === 402) {
         toast.error("AI credits exhausted. Add credits in Workspace → Usage.");
-        setLoading(false);
-        setMessages((prev) => prev.slice(0, -1));
+        setMessages((prev) => prev.slice(0, -2));
         return;
       }
       if (!resp.ok || !resp.body) throw new Error("stream failed");
@@ -83,9 +81,9 @@ const AIStylistPage = () => {
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let done = false;
+      let streamDone = false;
 
-      while (!done) {
+      while (!streamDone) {
         const { done: d, value } = await reader.read();
         if (d) break;
         buffer += decoder.decode(value, { stream: true });
@@ -97,7 +95,7 @@ const AIStylistPage = () => {
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
           const json = line.slice(6).trim();
-          if (json === "[DONE]") { done = true; break; }
+          if (json === "[DONE]") { streamDone = true; break; }
           try {
             const parsed = JSON.parse(json);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
@@ -111,6 +109,12 @@ const AIStylistPage = () => {
     } catch (e) {
       console.error(e);
       toast.error("Something went wrong. Please try again.");
+      setMessages((prev) => {
+        // Remove empty assistant placeholder if it never got content
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && last.content === "") return prev.slice(0, -1);
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
