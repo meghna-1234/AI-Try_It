@@ -38,19 +38,17 @@ const AIStylistPage = () => {
     if (!trimmed || loading) return;
     setInput("");
     const userMsg: Msg = { role: "user", content: trimmed };
-    const next = [...messages, userMsg];
-    setMessages(next);
+    // Add the user message + an empty assistant placeholder
+    setMessages((prev) => [...prev, userMsg, { role: "assistant", content: "" }]);
     setLoading(true);
 
     let assistantText = "";
     const upsert = (chunk: string) => {
       assistantText += chunk;
       setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        if (last?.role === "assistant" && last !== SYSTEM_GREETING && prev.length > next.length) {
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantText } : m));
-        }
-        return [...prev, { role: "assistant", content: assistantText }];
+        const copy = [...prev];
+        copy[copy.length - 1] = { role: "assistant", content: assistantText };
+        return copy;
       });
     };
 
