@@ -5,6 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Reels from "./pages/Reels.tsx";
+import TryOn from "./pages/TryOn.tsx";
+import StyleLibrary from "./pages/StyleLibrary.tsx";
+import AIStylist from "./pages/AIStylist.tsx";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +20,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/reels" element={<Reels />} />
+          <Route path="/try-on" element={<TryOn />} />
+          <Route path="/style-library" element={<StyleLibrary />} />
+          <Route path="/ai-stylist" element={<AIStylist />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

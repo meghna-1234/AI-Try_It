@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { HeroCarousel } from "@/components/HeroCarousel";
+import { FeatureGrid } from "@/components/FeatureGrid";
 import { ProductCatalog } from "@/components/ProductCatalog";
 
 const Index = () => {
@@ -10,6 +11,7 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroCarousel />
+        <FeatureGrid />
         <ProductCatalog />
       </main>
 
