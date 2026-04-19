@@ -96,7 +96,7 @@ const ReelsPage = () => {
               className="relative h-full w-full snap-start flex items-center justify-center"
             >
               {/* Video centered with vertical aspect */}
-              <div className="relative h-full md:h-[92%] aspect-[9/16] max-w-full mx-auto bg-neutral-900 md:rounded-3xl overflow-hidden">
+              <div className="relative h-full md:h-[92%] aspect-[9/16] max-w-full mx-auto bg-foreground md:rounded-3xl overflow-hidden">
                 <video
                   ref={(el) => (videoRefs.current[i] = el)}
                   src={reel.videoUrl}
