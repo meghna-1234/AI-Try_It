@@ -53,8 +53,10 @@ const AIStylistPage = () => {
     };
 
     try {
-      // Skip the static greeting when sending to the model
-      const apiMessages = next.filter((m) => m !== SYSTEM_GREETING);
+      // Build conversation: include all real messages + the new user message,
+      // skipping the static greeting and the empty assistant placeholder.
+      const apiMessages = [...messages, userMsg]
+        .filter((m) => m !== SYSTEM_GREETING && m.content !== "");
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
