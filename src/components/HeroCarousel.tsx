@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Sparkles, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import bridal from "@/assets/hero-bridal.jpg";
@@ -90,13 +91,17 @@ export const HeroCarousel = () => {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-pink h-14 px-7 text-base font-semibold group">
-              {slides[index].cta}
-              <ArrowRight className="ml-1 h-5 w-5 transition-transform group-hover:translate-x-1" />
+            <Button asChild size="lg" className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-pink h-14 px-7 text-base font-semibold group">
+              <a href="#shop">
+                {slides[index].cta}
+                <ArrowRight className="ml-1 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </a>
             </Button>
-            <Button size="lg" variant="outline" className="rounded-full h-14 px-7 text-base font-semibold border-white/40 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md">
-              <Zap className="mr-1 h-5 w-5 fill-warning text-warning" />
-              Virtual Try-On
+            <Button asChild size="lg" variant="outline" className="rounded-full h-14 px-7 text-base font-semibold border-white/40 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md">
+              <Link to="/try-on">
+                <Zap className="mr-1 h-5 w-5 fill-warning text-warning" />
+                Virtual Try-On
+              </Link>
             </Button>
           </div>
 
