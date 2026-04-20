@@ -58,8 +58,11 @@ const TryOnPage = () => {
     setGenerating(true);
     setResultImage(null);
     try {
-      // Convert local model image (Vite asset URL) to a fetchable absolute URL.
-      const modelImageUrl = new URL(model.image, window.location.origin).toString();
+      // The Lovable AI gateway can't fetch preview/localhost URLs, so we
+      // inline the model image as a base64 data URL.
+      const modelImageUrl = await toDataUrl(
+        new URL(model.image, window.location.origin).toString(),
+      );
 
       const { data, error } = await supabase.functions.invoke("ai-tryon", {
         body: {
