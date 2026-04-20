@@ -10,6 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 const fmtINR = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
+const toDataUrl = async (url: string): Promise<string> => {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 const tryOnProducts = products
   .filter((p) => ["Ethnic Wear", "Western Wear"].includes(p.category))
   .slice(0, 18);
@@ -58,8 +69,11 @@ const TryOnPage = () => {
     setGenerating(true);
     setResultImage(null);
     try {
-      // Convert local model image (Vite asset URL) to a fetchable absolute URL.
-      const modelImageUrl = new URL(model.image, window.location.origin).toString();
+      // The Lovable AI gateway can't fetch preview/localhost URLs, so we
+      // inline the model image as a base64 data URL.
+      const modelImageUrl = await toDataUrl(
+        new URL(model.image, window.location.origin).toString(),
+      );
 
       const { data, error } = await supabase.functions.invoke("ai-tryon", {
         body: {
