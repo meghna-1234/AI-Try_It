@@ -10,6 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 const fmtINR = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
+const toDataUrl = async (url: string): Promise<string> => {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 const tryOnProducts = products
   .filter((p) => ["Ethnic Wear", "Western Wear"].includes(p.category))
   .slice(0, 18);
