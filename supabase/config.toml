@@ -2,3 +2,6 @@ project_id = "kkzgojkkwoerqktrkgxj"
 
 [functions.ai-stylist]
 verify_jwt = false
+
+[functions.ai-tryon]
+verify_jwt = false
