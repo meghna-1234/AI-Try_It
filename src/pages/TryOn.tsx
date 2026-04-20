@@ -11,7 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 const fmtINR = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 const toDataUrl = async (url: string): Promise<string> => {
-  const res = await fetch(url);
+  // If it's already a data URL, return as-is
+  if (url.startsWith("data:")) return url;
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
   const blob = await res.blob();
   return await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -70,15 +73,16 @@ const TryOnPage = () => {
     setResultImage(null);
     try {
       // The Lovable AI gateway can't fetch preview/localhost URLs, so we
-      // inline the model image as a base64 data URL.
-      const modelImageUrl = await toDataUrl(
-        new URL(model.image, window.location.origin).toString(),
-      );
+      // inline both images as base64 data URLs (more reliable than hotlinks).
+      const [modelImageUrl, productImageUrl] = await Promise.all([
+        toDataUrl(new URL(model.image, window.location.origin).toString()),
+        toDataUrl(product.image),
+      ]);
 
       const { data, error } = await supabase.functions.invoke("ai-tryon", {
         body: {
           modelImage: modelImageUrl,
-          productImage: product.image,
+          productImage: productImageUrl,
           productName: product.name,
           productCategory: product.category,
           skinTone: skinTone || undefined,
