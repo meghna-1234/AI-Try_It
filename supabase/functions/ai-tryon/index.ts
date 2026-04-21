@@ -44,42 +44,51 @@ Deno.serve(async (req) => {
       ? `Adjust the model's appearance to: ${appearance.join(", ")}. Keep the face shape, identity and pose recognizable.`
       : "Keep the model's face, identity and pose unchanged.";
 
-    const prompt = `You are a professional fashion photographer creating a virtual try-on image.
+    const basePrompt = `GENERATE AN IMAGE (do not reply with text). Create a photorealistic virtual try-on photograph.
 
-Take the PERSON in the FIRST image and dress them in the GARMENT shown in the SECOND image (${body.productName ?? "garment"}${body.productCategory ? `, category: ${body.productCategory}` : ""}).
+Image 1 = the PERSON (model). Image 2 = the GARMENT (${body.productName ?? "garment"}${body.productCategory ? `, ${body.productCategory}` : ""}).
 
-Requirements:
-- Realistically fit the garment on the person's body, matching their pose and proportions.
-- Preserve the garment's exact color, pattern, fabric texture, neckline, sleeves and silhouette from the second image.
+Task: Output a single new image showing the PERSON from Image 1 wearing the GARMENT from Image 2.
+
+Rules:
+- Realistically fit the garment to the person's body, pose and proportions.
+- Preserve the garment's exact color, pattern, fabric texture, neckline, sleeves and silhouette from Image 2.
 - ${appearanceLine}
 - Studio fashion lighting, soft shadows, ${body.background ?? "clean neutral seamless backdrop"}.
-- Photorealistic, high-resolution, full-body or 3/4 shot framing.
-- No text, no watermarks, no logos overlaid.`;
+- Photorealistic, high-resolution, 3/4 or full-body framing.
+- No text, no watermarks, no logos. Return ONLY the image.`;
 
-    const aiRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
+    const callGateway = async (promptText: string) => {
+      return await fetch(
+        "https://ai.gateway.lovable.dev/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            modalities: ["image", "text"],
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: promptText },
+                  { type: "image_url", image_url: { url: body.modelImage } },
+                  { type: "image_url", image_url: { url: body.productImage } },
+                ],
+              },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
-          modalities: ["image", "text"],
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "image_url", image_url: { url: body.modelImage } },
-                { type: "image_url", image_url: { url: body.productImage } },
-              ],
-            },
-          ],
-        }),
-      },
-    );
+      );
+    };
+
+    const extractImage = (data: any): string | undefined =>
+      data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    let aiRes = await callGateway(basePrompt);
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();
@@ -102,9 +111,25 @@ Requirements:
       );
     }
 
-    const data = await aiRes.json();
-    const imageUrl: string | undefined =
-      data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    let data = await aiRes.json();
+    let imageUrl = extractImage(data);
+
+    // Retry once with a stricter, image-only instruction if the model replied with text only
+    if (!imageUrl) {
+      console.warn("First attempt returned no image, retrying with stricter prompt");
+      const retryPrompt = `OUTPUT IMAGE ONLY. No text, no explanation, no caption.
+
+${basePrompt}
+
+If you cannot edit, generate a brand new photorealistic image that satisfies the rules above. You MUST return an image in the response.`;
+      const retryRes = await callGateway(retryPrompt);
+      if (retryRes.ok) {
+        data = await retryRes.json();
+        imageUrl = extractImage(data);
+      } else {
+        console.error("Retry failed", retryRes.status, await retryRes.text());
+      }
+    }
 
     if (!imageUrl) {
       console.error("No image in AI response", JSON.stringify(data).slice(0, 500));
