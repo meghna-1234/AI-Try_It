@@ -91,7 +91,27 @@ const TryOnPage = () => {
         },
       });
 
-      if (error) throw error;
+      // Supabase invoke wraps non-2xx responses in FunctionsHttpError. The actual
+      // JSON body lives on err.context (a Response). Parse it for a clear message.
+      if (error) {
+        let parsed: any = null;
+        try {
+          parsed = await (error as any)?.context?.json?.();
+        } catch {
+          /* ignore */
+        }
+        const status = (error as any)?.context?.status;
+        const serverMsg = parsed?.error || (error as any)?.message;
+        if (status === 402) {
+          toast.error("AI credits exhausted. Add credits in Settings → Workspace → Cloud & AI balance.", { duration: 8000 });
+          return;
+        }
+        if (status === 429) {
+          toast.error("Too many requests — please wait a moment and try again.");
+          return;
+        }
+        throw new Error(serverMsg || "Generation failed");
+      }
       if (!data?.image) throw new Error("No image returned");
 
       setResultImage(data.image);
